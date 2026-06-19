@@ -64,6 +64,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'กรุณากรอกชื่อผู้ส่ง' }, { status: 400 })
   }
 
+  if (!body.blog_id?.trim()) {
+    return NextResponse.json({ error: 'ไม่พบบทความ' }, { status: 400 })
+  }
+
   if (!validateThaiComment(body.message)) {
     return NextResponse.json(
       { error: 'ข้อความ Comment ต้องเป็นภาษาไทย ตัวเลข หรือ / เท่านั้น' },
@@ -71,16 +75,14 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  const { data, error } = await supabase
-    .from('comments')
-    .insert({
-      ...body,
-      is_approved: false,
-      review_status: 'pending',
-    })
-    .select()
-    .single()
+  const { error } = await supabase.from('comments').insert({
+    blog_id: body.blog_id,
+    sender_name: body.sender_name.trim(),
+    message: body.message.trim(),
+    is_approved: false,
+    review_status: 'pending',
+  })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+  return NextResponse.json({ success: true }, { status: 201 })
 }
